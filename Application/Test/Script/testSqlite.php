@@ -6,11 +6,12 @@
  * Time: 下午2:55
  */
 require __DIR__.'/../../../Sharin/unitest.inc';
+$dbname = null;//使用默认的名称
 
 //测试 创建数据库和表
-\Sharin\dump('CHECK INSTALLED:',\Sharin\Library\SQLite::isInstalled('a'));
+\Sharin\dump('CHECK INSTALLED:',\Sharin\Library\SQLite::isInstalled($dbname));
 try{
-    \Sharin\dump('DO INSTALL:',\Sharin\Library\SQLite::install('a'));
+    \Sharin\dump('DO INSTALL:',\Sharin\Library\SQLite::install($dbname));
 }catch (\Sharin\Exception $e) {
     \Sharin\dump('ERROR:',$e->getMessage());
 }
@@ -20,13 +21,14 @@ try{
 //命令行模式下无法使用
 // 安装： apt-cache search pdo-sqlite
 //      apt-get install php7.0-sqlite3
-$instance = \Sharin\Library\SQLite::getInstance('a');
+$instance = \Sharin\Library\SQLite::getInstance($dbname);
 \Sharin\dump(
-
     $instance->create([
-    'ID'   => '1231',
-    'NAME' => 'dadsadsa'
-]),
-$instance->select('ID = 1231')
-
+            'ID'   => time(),
+            'NAME' => 'dadsadsa'
+        ]),
+    $instance->lastInsertId(),//不一定有效
+    $instance->select(),
+    $instance->select(' id = 1231'),
+    $instance->find(1231)
 );
