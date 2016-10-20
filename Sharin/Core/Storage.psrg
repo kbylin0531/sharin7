@@ -34,10 +34,6 @@ class Storage extends Component {
 
     protected static $name = 'storage';
 
-    /**
-     * @var array
-     */
-    private static $_config = [];
 
     public static function initializationize(array $config = null){
         parent::initializationize([
@@ -51,7 +47,6 @@ class Storage extends Component {
                 SR_PATH_DATA, //运行时配置文件
             ],
         ]);
-        self::$_config = self::convention();
     }
 //-------------------------------- 特征方法，仅适用于文件系统的驱动 ----------------------------------------------------------------------//
     /**
@@ -180,22 +175,20 @@ class Storage extends Component {
      */
     private static function checkAccessableWithRevise(string &$path,bool $isread){
         if($isread){
-            $scopes = self::$_config['READABLE_SCOPE'];
-            $limit =  self::$_config['READ_LIMIT_ON'];
+            $scopes = self::convention('READABLE_SCOPE');
+            $limit =  self::convention('READ_LIMIT_ON');
 
             if(false === ($path = realpath($path))) return false; //文件不存在
 
         }else{
-            $scopes = self::$_config['WRITABLE_SCOPE'];
-            $limit =  self::$_config['WRITE_LIMIT_ON'];
+            $scopes = self::convention('WRITABLE_SCOPE');
+            $limit =  self::convention('WRITE_LIMIT_ON');
         }
         if(!$limit or !$scopes) return true;//未限制或者限制区域为空
 
         //目录处理(路径处理，程序编码转化为系统编码) TODO:需要在windows中文版本(系统编码是GB2312)中测试编码转换问题
         $path = Encode::toSystemEncode($path);
         $temp = dirname($path);//修改的目录
-
-//        \Sharin\dumpout($temp,$scopes,Utils::checkInScope($temp,$scopes),self::$_config);
 
         if(is_string($scopes)){
             return Utils::checkInScope($temp,$scopes);
@@ -468,7 +461,6 @@ class Storage extends Component {
      * @return bool
      */
     public static function write($filepath,$content,$write_encode='UTF-8',$text_encode='UTF-8'){
-//        \Sharin\dumpout($filepath,self::$_config,self::checkAccessableWithRevise($filepath,false) );
         if(!self::checkAccessableWithRevise($filepath,false) or !self::makeParentDir($filepath)) return false;
         //文本编码检测
         $write_encode !== $text_encode and $content = iconv($text_encode,"{$write_encode}//IGNORE",$content);

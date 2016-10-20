@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sharin Demo</title>
+</head>
+<body>
+<center>
+    <h1>Hello!</h1>
+    <p>The project is powered by {$info.author}.</p>
+    <p>
+        <a target="_blank" href="{$info.address}">Goto the project on github.</a>
+    </p>
+</center>
+</body>
+</html>

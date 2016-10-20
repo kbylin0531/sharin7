@@ -65,9 +65,9 @@ class Lang extends Component {
 
             //语言包路径
             'PATH_INNER'    => SR_PATH_FRAMEWORK.'/I18n',//预定义语言包
-            'PATH_OUTER'    => SR_PATH_BASE.'/Lang',    //用户定义语言包路径
+            'PATH_OUTER'    => SR_PATH_BASE.'/I18n',    //用户定义语言包路径
             //语言包缓存路径
-            'PATH_CACHE'    => SR_PATH_DATA.'/Lang',//语言包缓存路径
+            'PATH_CACHE'    => SR_PATH_RUNTIME.'/I18n',//语言包缓存路径
 
         ]);
         self::$config = self::convention();
@@ -81,11 +81,9 @@ class Lang extends Component {
             foreach (self::$config['LANG_LIST'] as $lang) {
                 self::loadLang($lang);
             }
-            \Sharin\dump('build cache',self::$cache);
             self::$flag = true;
         }else{
             self::loadLang();
-            \Sharin\dump('cache nothing',self::$cache);
             self::$flag = false;
         }
         register_shutdown_function([self::class,'storeLang']);
@@ -131,7 +129,6 @@ class Lang extends Component {
      */
     public static function storeLang(string $lang=null,array $data=null){
         if(self::$flag === true){
-            \Sharin\dump('store cache into local');
             //只有发生了改变的情况下才会主动去保存修改
             if(null === $lang){
                 foreach (self::$cache as $lang => $data) {
@@ -160,7 +157,6 @@ class Lang extends Component {
         $cachefile = self::$config['PATH_CACHE']."/{$lang}.cache.php";
         if(!Storage::has($cachefile,Storage::READ_ACCESS) or Storage::mtime($cachefile) < self::$outer_upd_time){
             //文件不存在或者文件更新时间小于外部文件夹修改时间
-            var_dump(" rebuild '$lang' cache and load");
             self::$cache[$lang] = [];
             $mainfile = "/{$lang}.php";
             $innerpath = self::$config['PATH_INNER'].$mainfile;
@@ -177,7 +173,6 @@ class Lang extends Component {
             }
             self::$flag = true;
         }else{
-            var_dump(" load '$lang' from cache");
             self::$cache[$lang] = Configger::parse($cachefile,Configger::TYPE_PHP);
         }
 

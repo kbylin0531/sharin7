@@ -10,10 +10,20 @@
 namespace Sharin\Library\Helper;
 
 
-class StringTool {
+class StringHelper {
 
     const JAVA_TO_C = 0;
     const C_TO_JAVA = 1;
+
+    /**
+     * 判断是否以目标字符串结尾
+     * @param string $string
+     * @param string $tail
+     * @return bool
+     */
+    public static function endWith(string $string,string $tail) : bool {
+        return substr($string,-strlen($tail)) === $tail;
+    }
 
     /**
      * 检验参数是否都是字母开头的标识符

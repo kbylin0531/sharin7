@@ -81,10 +81,6 @@ class Sae implements StorageInterface {
             throw new FileWriteFailedException($filepath);
         }
         return $bytes;
-//        Util::dump($filepath,file_exists('saestor://runtime/log/debug//2015-08-29.log'),
-//        is_writable('saestor://runtime/log/debug//2015-08-29.log')
-//        );
-//        return parent::append($filepath,$content);
     }
     /**
      * 确定文件是否存在

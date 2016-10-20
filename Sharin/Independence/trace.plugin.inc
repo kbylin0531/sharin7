@@ -12,10 +12,10 @@
  * @package Lib
  */
 
-function debug(){
+function vdebug(){
     static $_messages = [];
     if(func_num_args()){
-        return $_messages[] = _buildMessage(func_get_args(),debug_backtrace());
+        return $_messages[] = _vbuildMessage(func_get_args(),debug_backtrace());
     }else{
         return $_messages;
     }
@@ -23,15 +23,15 @@ function debug(){
 /**
  * @param ...
  */
-function dump(){
-    echo _buildMessage(func_get_args(),debug_backtrace());
+function vdump(){
+    echo _vbuildMessage(func_get_args(),debug_backtrace());
 }
 
-function dumpout(){
-    exit(_buildMessage(func_get_args(),debug_backtrace()));
+function vdumpout(){
+    exit(_vbuildMessage(func_get_args(),debug_backtrace()));
 }
 
-function _buildMessage($params,$traces){
+function _vbuildMessage($params,$traces){
     $color='#';$str='9ABCDEF';//随机浅色背景
     for($i=0;$i<6;$i++) $color=$color.$str[rand(0,strlen($str)-1)];
     $str = "<pre style='background: {$color};width: 100%;padding: 10px;margin: 0'><h3 style='color: midnightblue'><b>F:</b>{$traces[0]['file']} << <b>L:</b>{$traces[0]['line']} >> </h3>";
@@ -70,7 +70,7 @@ function showtrace(array $attach=[],array $keywords=[]){
             'time'      => 1000*(microtime(true) - $_SERVER['REQUEST_TIME_FLOAT']).' ms',
             'Obcache-Size'  => number_format((ob_get_length()/1024),2).' KB (Unexpect Trace Page!)',//不包括trace
         ],
-        'Debug'          => debug(),
+        'Debug'          => vdebug(),
         'Files'         => array_merge(['Total'=>count($info)],$info),
         'GET'           => $_GET,
         'POST'          => $_POST,

@@ -765,6 +765,38 @@ abstract class Component {
     }
 
     /**
+     * 设置惯例配置
+     * @param string $name
+     * @param mixed $value
+     * @return bool
+     */
+    final public static function setConvention(string $name,$value){
+        $clsnm = static::class;
+        if(empty(self::$_conventions[$clsnm])){
+            return false;
+        }
+        if(strpos($name,'.') !== false){
+            $target = &self::$_conventions[$clsnm];
+            $name = explode('.',$name);
+            $len = count($name);
+            $flag = $len -1 ;
+            for ($i = 0 ; $i < $len ; $i ++) {
+                $key = $name[$i];
+                if($flag === $len){
+                    $target[$key] = $value;
+                }else{
+                    $target[$key] = [];
+                    $target = & $target[$key];
+                }
+            }
+        }else{
+            self::$_conventions[$clsnm][$name] = $value;
+        }
+        return true;
+    }
+
+
+    /**
      * 获取配置（规矩）
      * @param string $name 配置名称，涉及到子配置时使用"."连接
      * @param mixed $alternate 替补，如果目标配置不存在

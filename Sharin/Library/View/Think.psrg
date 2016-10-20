@@ -778,10 +778,6 @@ class Think implements ViewInterface {
                 $templateName .= $this->config['TEMPLATE_SUFFIX'];
             }
 
-//            Sharin\dumpout(realpath(dirname($this->template).'/'.$templateName));
-//            Sharin\dump($templateName);
-//            $temp = $templateName;
-
             if(strpos($templateName,'/') === 0){
                 //Absolute path
                 $templateName = SR_PATH_APP.$templateName;//abs
