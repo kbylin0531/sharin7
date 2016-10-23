@@ -154,6 +154,22 @@ class Response {
         }
     }
 
+    const HEADER_UTF8 = 1;
+
+    /**
+     * 输出相应头部
+     * @param int $type 相应头部类型
+     */
+    public static function header($type){
+        switch ($type) {
+            case self::HEADER_UTF8:
+                self::cleanOutput();
+                header('Content-type:text/html;charset=utf-8');
+                break;
+        }
+
+    }
+
     /**
      * 重定向
      * @param string $url 重定向地址

@@ -789,13 +789,13 @@ class Think implements ViewInterface {
                 //Relative path
                 $templateName = dirname($this->template).'/'.$templateName;
             }
-            $templateName = realpath($templateName);
+            $template_name = realpath($templateName);
 
-            if(is_file($templateName)){
-                // 获取模板文件内容
-                $parseStr .= file_get_contents($templateName);
+            if(false === $template_name){/* 文件不存在时返回false，这样可以少一步判断 */
+                throw new Sharin\Exceptions\View\TemplateNotFoundException($templateName);
             }else{
-                Exception::throwing($templateName,'not found!');
+                // 获取模板文件内容
+                $parseStr .= file_get_contents($template_name);
             }
         }
         return $parseStr;

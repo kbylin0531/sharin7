@@ -80,9 +80,9 @@ Sharingan:
     29:#!/usr/bin/env php 加入后可以直接输入PHP文件名像shell脚本那样执行（该命令的意思是使用环境变量中的php命令解析下面的脚本程序）
     30.当出现目录不可写等错误时，需要检查文件权限，通常可以修改所有者来获取访问权限 "chown -R asus.asus *"
     31.类的注释中尽量使用完整名称而避免在注释之外使用use语句(可以提高一部分性能) property Sharin\Core\Logger $log 日志记录类
-    32.限制函数返回值可以是
+    32.限制函数返回值可以是：
         
-        public function func(): array
+        public function func(string $str): array
         {
             return [];
         }
@@ -90,3 +90,7 @@ Sharingan:
 
     33. Sharin
     34.通常认为抛出异常是程序无法继续执行或者执行下去没有意义的清空下执行的操作，通常清空下返回false即可代替通常的错误，这么做也是为节省开销作考虑
+    
+    35. 可执行的PHP文件将被命名为 XXX.go 
+        单体文件将被命名为 YYY.psrg 
+        过程文件将被命名为 XXX.inc

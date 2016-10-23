@@ -26,18 +26,19 @@ namespace {
     foreach ($files as $name => $file){
         if(is_file($file)){
             $content = Storage::read($file);
+            //只有带上尾巴才能被拷贝
             if(StringHelper::endWith($name,$sample_tail)){//判断是否带有尾巴
                 $name = strstr($name,$sample_tail,true);//删除尾巴
-            }
-            $newfile = $target_dir.$name;
-            if(!is_file($newfile)){
-                if(!Storage::write($target_dir.$name,$content)) {
-                    throw new Exception("Write file '$newfile' failed");
+                $newfile = $target_dir.$name;
+                if(!is_file($newfile)){
+                    if(!Storage::write($target_dir.$name,$content)) {
+                        throw new Exception("Write file '$newfile' failed");
+                    }
+                    $counter['fi'] ++;
+                }else{
+                    //文件已经存在则略过
+                    $counter['fj'] ++;
                 }
-                $counter['fi'] ++;
-            }else{
-                //文件已经存在则略过
-                $counter['fj'] ++;
             }
         }elseif(is_dir($file)){
             $newfile = $target_dir.$name;
