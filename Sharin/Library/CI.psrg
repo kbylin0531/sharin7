@@ -1,101 +1,123 @@
 <?php
 namespace Sharin\Library;
-
-const CI_VERSION = '3.1.1';
-
-
-/*
-|--------------------------------------------------------------------------
-| Display Debug backtrace
-|--------------------------------------------------------------------------
-|
-| If set to TRUE, a backtrace will be displayed along with php errors. If
-| error_reporting is disabled, the backtrace will not display, regardless
-| of this setting
-|
-*/
-defined('SHOW_DEBUG_BACKTRACE') OR define('SHOW_DEBUG_BACKTRACE', TRUE);
-
-/*
-|--------------------------------------------------------------------------
-| File and Directory Modes
-|--------------------------------------------------------------------------
-|
-| These prefs are used when checking and setting modes when working
-| with the file system.  The defaults are fine on servers with proper
-| security, but you may wish (or even need) to change the values in
-| certain environments (Apache running a separate process for each
-| user, PHP under CGI with Apache suEXEC, etc.).  Octal values should
-| always be used to set the mode correctly.
-|
-*/
-defined('FILE_READ_MODE')  OR define('FILE_READ_MODE', 0644);
-defined('FILE_WRITE_MODE') OR define('FILE_WRITE_MODE', 0666);
-defined('DIR_READ_MODE')   OR define('DIR_READ_MODE', 0755);
-defined('DIR_WRITE_MODE')  OR define('DIR_WRITE_MODE', 0755);
-
-/*
-|--------------------------------------------------------------------------
-| File Stream Modes
-|--------------------------------------------------------------------------
-|
-| These modes are used when working with fopen()/popen()
-|
-*/
-defined('FOPEN_READ')                           OR define('FOPEN_READ', 'rb');
-defined('FOPEN_READ_WRITE')                     OR define('FOPEN_READ_WRITE', 'r+b');
-defined('FOPEN_WRITE_CREATE_DESTRUCTIVE')       OR define('FOPEN_WRITE_CREATE_DESTRUCTIVE', 'wb'); // truncates existing file data, use with care
-defined('FOPEN_READ_WRITE_CREATE_DESTRUCTIVE')  OR define('FOPEN_READ_WRITE_CREATE_DESTRUCTIVE', 'w+b'); // truncates existing file data, use with care
-defined('FOPEN_WRITE_CREATE')                   OR define('FOPEN_WRITE_CREATE', 'ab');
-defined('FOPEN_READ_WRITE_CREATE')              OR define('FOPEN_READ_WRITE_CREATE', 'a+b');
-defined('FOPEN_WRITE_CREATE_STRICT')            OR define('FOPEN_WRITE_CREATE_STRICT', 'xb');
-defined('FOPEN_READ_WRITE_CREATE_STRICT')       OR define('FOPEN_READ_WRITE_CREATE_STRICT', 'x+b');
-
-/*
-|--------------------------------------------------------------------------
-| Exit Status Codes
-|--------------------------------------------------------------------------
-|
-| Used to indicate the conditions under which the script is exit()ing.
-| While there is no universal standard for error codes, there are some
-| broad conventions.  Three such conventions are mentioned below, for
-| those who wish to make use of them.  The CodeIgniter defaults were
-| chosen for the least overlap with these conventions, while still
-| leaving room for others to be defined in future versions and user
-| applications.
-|
-| The three main conventions used for determining exit status codes
-| are as follows:
-|
-|    Standard C/C++ Library (stdlibc):
-|       http://www.gnu.org/software/libc/manual/html_node/Exit-Status.html
-|       (This link also contains other GNU-specific conventions)
-|    BSD sysexits.h:
-|       http://www.gsp.com/cgi-bin/man.cgi?section=3&topic=sysexits
-|    Bash scripting:
-|       http://tldp.org/LDP/abs/html/exitcodes.html
-|
-*/
-defined('EXIT_SUCCESS')        OR define('EXIT_SUCCESS', 0); // no errors
-defined('EXIT_ERROR')          OR define('EXIT_ERROR', 1); // generic error
-defined('EXIT_CONFIG')         OR define('EXIT_CONFIG', 3); // configuration error
-defined('EXIT_UNKNOWN_FILE')   OR define('EXIT_UNKNOWN_FILE', 4); // file not found
-defined('EXIT_UNKNOWN_CLASS')  OR define('EXIT_UNKNOWN_CLASS', 5); // unknown class
-defined('EXIT_UNKNOWN_METHOD') OR define('EXIT_UNKNOWN_METHOD', 6); // unknown class member
-defined('EXIT_USER_INPUT')     OR define('EXIT_USER_INPUT', 7); // invalid user input
-defined('EXIT_DATABASE')       OR define('EXIT_DATABASE', 8); // database error
-defined('EXIT__AUTO_MIN')      OR define('EXIT__AUTO_MIN', 9); // lowest automatically-assigned error code
-defined('EXIT__AUTO_MAX')      OR define('EXIT__AUTO_MAX', 125); // highest automatically-assigned error code
+define('SR_CI_PATH', realpath(__DIR__ . '/../Vendor/CodeIgniter-3.1.1/'));
+//---------------------------------------- 入口文件 ------------------------------------------------------------//
+/**
+ *---------------------------------------------------------------
+ * APPLICATION ENVIRONMENT
+ *---------------------------------------------------------------
+ * You can load different configurations depending on your
+ * current environment. Setting the environment also influences
+ * things like logging and error reporting.
+ * This can be set to anything, but default usage is:
+ *     development
+ *     testing
+ *     production
+ * NOTE: If you change these, also change the error_reporting() code below
+ */
+define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development');
+/**
+ *---------------------------------------------------------------
+ * ERROR REPORTING
+ *---------------------------------------------------------------
+ * Different environments will require different levels of error reporting.
+ * By default development will show errors but testing and live will hide them.
+ */
+switch (ENVIRONMENT) {
+    case 'development':
+        error_reporting(-1);
+        ini_set('display_errors', 1);
+        break;
+    case 'testing':
+    case 'production':
+        ini_set('display_errors', 0);
+        if (version_compare(PHP_VERSION, '5.3', '>=')) {
+            error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT & ~E_USER_NOTICE & ~E_USER_DEPRECATED);
+        } else {
+            error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_USER_NOTICE);
+        }
+        break;
+    default:
+        header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
+        echo 'The application environment is not set correctly.';
+        exit(1); // EXIT_ERROR
+}
 
 
-define('APPPATH', SR_PATH_APP);
-define('BASEPATH', __DIR__ . DIRECTORY_SEPARATOR . 'CI' . DIRECTORY_SEPARATOR);
-defined('ENVIRONMENT') or define('ENVIRONMENT', 'development');// or production
+/**
+ *---------------------------------------------------------------
+ * SYSTEM DIRECTORY NAME
+ *---------------------------------------------------------------
+ * This variable must contain the name of your "system" directory.
+ * Set the path if it is not in the same directory as this file.
+ */
+$system_path = SR_CI_PATH . 'system';
+if (!($_temp = realpath($system_path)) !== FALSE) {
+    header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
+    echo 'Your system folder path does not appear to be set correctly. Please open the following file and correct this: ' . pathinfo(__FILE__, PATHINFO_BASENAME);
+    exit(3); // EXIT_CONFIG
+}
+// Path to the system directory
+define('BASEPATH', $system_path);
 
+/**
+ * -------------------------------------------------------------------
+ *  Now that we know the path, set the main path constants
+ * -------------------------------------------------------------------
+ */
+// The name of THIS file
+define('SELF', pathinfo($_SERVER['SCRIPT_FILENAME'], PATHINFO_BASENAME));
+// Path to the front controller (this file) directory
+define('FCPATH', dirname($_SERVER['SCRIPT_FILENAME']) . DIRECTORY_SEPARATOR);
+// Name of the "system" directory
+define('SYSDIR', basename(BASEPATH));
+
+/**
+ *---------------------------------------------------------------
+ * APPLICATION DIRECTORY NAME
+ *---------------------------------------------------------------
+ * If you want this front controller to use a different "application"
+ * directory than the default one you can set its name here. The directory
+ * can also be renamed or relocated anywhere on your server. If you do,
+ * use an absolute (full) server path.
+ * For more info please see the user guide:
+ *
+ * https://codeigniter.com/user_guide/general/managing_apps.html
+ *
+ * NO TRAILING SLASH!
+ */
+$application_folder = SR_CI_PATH.'Application';
+// The path to the "application" directory
+if (!is_dir($application_folder)) {
+    header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
+    echo 'Your application folder path does not appear to be set correctly. Please open the following file and correct this: ' . SELF;
+    exit(3); // EXIT_CONFIG
+}
+define('APPPATH', $application_folder . DIRECTORY_SEPARATOR);
+
+/**
+ *---------------------------------------------------------------
+ * VIEW DIRECTORY NAME
+ *---------------------------------------------------------------
+ * If you want to move the view directory out of the application
+ * directory, set the path to it here. The directory can be renamed
+ * and relocated anywhere on your server. If blank, it will default
+ * to the standard location inside your application directory.
+ * If you do move this, use an absolute (full) server path.
+ * NO TRAILING SLASH!
+ */
+$view_folder = APPPATH.'views';
+// The path to the "views" directory
+if (!is_dir($view_folder)) {
+    header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
+    echo 'Your view folder path does not appear to be set correctly. Please open the following file and correct this: ' . SELF;
+    exit(3); // EXIT_CONFIG
+}
+define('VIEWPATH', $view_folder . DIRECTORY_SEPARATOR);
 
 //set_error_handler([CI::class,'handleError']);
 //set_exception_handler([CI::class,'handleException']);
-register_shutdown_function(function (){
+register_shutdown_function(function () {
     $last_error = error_get_last();
     if (isset($last_error) &&
         ($last_error['type'] & (E_ERROR | E_PARSE | E_CORE_ERROR | E_CORE_WARNING | E_COMPILE_ERROR | E_COMPILE_WARNING))
@@ -103,14 +125,12 @@ register_shutdown_function(function (){
         CI::handleError($last_error['type'], $last_error['message'], $last_error['file'], $last_error['line']);
     }
 });
-
 /**
- * Class CI CI类
+ * Class CI CI类兼容包
  * @package Sharin\Library
  */
 class CI
 {
-
     /**
      * @var CI
      */
