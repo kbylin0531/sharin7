@@ -1,0 +1,13 @@
+.idea/
+Runtime/
+Data/
+
+
+# 开发模式下
+.htaccess
+Application/
+Config/
+I18n/
+LICENSE
+Public/
+Vendor/

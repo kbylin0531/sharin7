@@ -133,9 +133,9 @@ if ( ! function_exists('load_class'))
 	 * exist it is instantiated and set to a static variable. If it has
 	 * previously been instantiated the variable is returned.
 	 *
-	 * @param	string	the class name being requested
-	 * @param	string	the directory where the class should be found
-	 * @param	string	an optional argument to pass to the class constructor
+	 * @param	string $class	the class name being requested
+	 * @param	string $directory	the directory where the class should be found
+	 * @param	string $param	an optional argument to pass to the class constructor
 	 * @return	object
 	 */
 	function &load_class($class, $directory = 'libraries', $param = NULL)
@@ -461,8 +461,8 @@ if ( ! function_exists('log_message'))
 	 * We use this as a simple mechanism to access the logging
 	 * class and send messages to be logged.
 	 *
-	 * @param	string	the error level: 'error', 'debug' or 'info'
-	 * @param	string	the error message
+	 * @param	string $level	the error level: 'error', 'debug' or 'info'
+	 * @param	string $message	the error message
 	 * @return	void
 	 */
 	function log_message($level, $message)

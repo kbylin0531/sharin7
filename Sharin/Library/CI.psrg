@@ -1,6 +1,6 @@
 <?php
 namespace Sharin\Library;
-define('SR_CI_PATH', realpath(__DIR__ . '/../Vendor/CodeIgniter-3.1.1/'));
+define('SR_CI_PATH', realpath(__DIR__ . '/../Vendor/CodeIgniter-3.1.1/') . DIRECTORY_SEPARATOR);
 //---------------------------------------- 入口文件 ------------------------------------------------------------//
 /**
  *---------------------------------------------------------------
@@ -52,14 +52,13 @@ switch (ENVIRONMENT) {
  * Set the path if it is not in the same directory as this file.
  */
 $system_path = SR_CI_PATH . 'system';
-if (!($_temp = realpath($system_path)) !== FALSE) {
+if (($_temp = realpath($system_path)) === FALSE) {
     header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
     echo 'Your system folder path does not appear to be set correctly. Please open the following file and correct this: ' . pathinfo(__FILE__, PATHINFO_BASENAME);
     exit(3); // EXIT_CONFIG
 }
 // Path to the system directory
 define('BASEPATH', $system_path);
-
 /**
  * -------------------------------------------------------------------
  *  Now that we know the path, set the main path constants
@@ -86,11 +85,11 @@ define('SYSDIR', basename(BASEPATH));
  *
  * NO TRAILING SLASH!
  */
-$application_folder = SR_CI_PATH.'Application';
+$application_folder = SR_PATH_BASE . 'Application';
 // The path to the "application" directory
 if (!is_dir($application_folder)) {
     header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
-    echo 'Your application folder path does not appear to be set correctly. Please open the following file and correct this: ' . SELF;
+    echo 'Your application folder path does not appear to be set correctly. Please open the following file and correct this: ' . $application_folder;
     exit(3); // EXIT_CONFIG
 }
 define('APPPATH', $application_folder . DIRECTORY_SEPARATOR);
@@ -106,27 +105,28 @@ define('APPPATH', $application_folder . DIRECTORY_SEPARATOR);
  * If you do move this, use an absolute (full) server path.
  * NO TRAILING SLASH!
  */
-$view_folder = APPPATH.'views';
+$view_folder = APPPATH . 'View';
 // The path to the "views" directory
-if (!is_dir($view_folder)) {
+if (!is_dir($view_folder) and !mkdir($view_folder, 0600, true)) {
     header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
-    echo 'Your view folder path does not appear to be set correctly. Please open the following file and correct this: ' . SELF;
+    echo 'Your view folder path does not appear to be set correctly. Please open the following file and correct this: ' . $view_folder;
     exit(3); // EXIT_CONFIG
 }
 define('VIEWPATH', $view_folder . DIRECTORY_SEPARATOR);
 
 //set_error_handler([CI::class,'handleError']);
 //set_exception_handler([CI::class,'handleException']);
-register_shutdown_function(function () {
-    $last_error = error_get_last();
-    if (isset($last_error) &&
-        ($last_error['type'] & (E_ERROR | E_PARSE | E_CORE_ERROR | E_CORE_WARNING | E_COMPILE_ERROR | E_COMPILE_WARNING))
-    ) {
-        CI::handleError($last_error['type'], $last_error['message'], $last_error['file'], $last_error['line']);
-    }
-});
+//register_shutdown_function(function () {
+//    $last_error = error_get_last();
+//    if (isset($last_error) &&
+//        ($last_error['type'] & (E_ERROR | E_PARSE | E_CORE_ERROR | E_CORE_WARNING | E_COMPILE_ERROR | E_COMPILE_WARNING))
+//    ) {
+//        CI::handleError($last_error['type'], $last_error['message'], $last_error['file'], $last_error['line']);
+//    }
+//});
 /**
- * Class CI CI类兼容包
+ * Class CI
+ * CI类中间层，可以通过它加载CI中的类和方法
  * @package Sharin\Library
  */
 class CI
@@ -136,6 +136,10 @@ class CI
      */
     private static $instance = null;
 
+    private function __construct(){
+
+    }
+
     public static function app()
     {
         if (!self::$instance) {
@@ -144,460 +148,4 @@ class CI
         return self::$instance;
     }
 
-    public static function handleError($severity, $message, $filepath, $line)
-    {
-        $is_error = (((E_ERROR | E_PARSE | E_COMPILE_ERROR | E_CORE_ERROR | E_USER_ERROR) & $severity) === $severity);
-
-        // When an error occurred, set the status header to '500 Internal Server Error'
-        // to indicate to the client something went wrong.
-        // This can't be done within the $_error->show_php_error method because
-        // it is only called when the display_errors flag is set (which isn't usually
-        // the case in a production environment) or when errors are ignored because
-        // they are above the error_reporting threshold.
-        if ($is_error) {
-            set_status_header(500);
-        }
-
-        // Should we ignore the error? We'll get the current error_reporting
-        // level and add its bits with the severity bits to find out.
-        if (($severity & error_reporting()) !== $severity) {
-            return;
-        }
-
-        $_error =& load_class('Exceptions', 'core');
-        $_error->log_exception($severity, $message, $filepath, $line);
-
-        // Should we display the error?
-        if (str_ireplace(array('off', 'none', 'no', 'false', 'null'), '', ini_get('display_errors'))) {
-            $_error->show_php_error($severity, $message, $filepath, $line);
-        }
-
-        // If the error is fatal, the execution of the script should be stopped because
-        // errors can't be recovered from. Halting the script conforms with PHP's
-        // default error handling. See http://www.php.net/manual/en/errorfunc.constants.php
-        if ($is_error) {
-            exit(1); // EXIT_ERROR
-        }
-    }
-
-    public static function handleException($exception)
-    {
-        $_error =& load_class('Exceptions', 'core');
-        $_error->log_exception('error', 'Exception: ' . $exception->getMessage(), $exception->getFile(), $exception->getLine());
-
-        is_cli() OR set_status_header(500);
-        // Should we display the error?
-        if (str_ireplace(array('off', 'none', 'no', 'false', 'null'), '', ini_get('display_errors'))) {
-            $_error->show_exception($exception);
-        }
-
-        exit(1); // EXIT_ERROR
-    }
-
-    /**
-     * Keeps track of which libraries have been loaded. This function is
-     * called by the load_class() function above
-     *
-     * @param    string
-     * @return    array
-     */
-    public static function &isLoaded($class = '')
-    {
-        static $_is_loaded = array();
-
-        if ($class !== '') {
-            $_is_loaded[strtolower($class)] = $class;
-        }
-        return $_is_loaded;
-    }
-
-    /**
-     * Class registry
-     *
-     * This function acts as a singleton. If the requested class does not
-     * exist it is instantiated and set to a static variable. If it has
-     * previously been instantiated the variable is returned.
-     *
-     * @param    string $class the class name being requested
-     * @param    string $directory the directory where the class should be found
-     * @param    string $param an optional argument to pass to the class constructor
-     * @return    object
-     */
-    public static function &loadClass($class, $directory = 'libraries', $param = NULL)
-    {
-        static $_classes = array();
-
-        // Does the class exist? If so, we're done...
-        if (isset($_classes[$class])) {
-            return $_classes[$class];
-        }
-
-        $name = FALSE;
-
-        // Look for the class first in the local application/libraries folder
-        // then in the native system/libraries folder
-        foreach (array(APPPATH, BASEPATH) as $path) {
-            if (file_exists($path . $directory . '/' . $class . '.php')) {
-                $name = 'CI_' . $class;
-
-                if (class_exists($name, FALSE) === FALSE) {
-                    require_once($path . $directory . '/' . $class . '.php');
-                }
-                break;
-            }
-        }
-
-        // Is the request a class extension? If so we load it too
-        if (file_exists(APPPATH . $directory . '/' . config_item('subclass_prefix') . $class . '.php')) {
-            $name = config_item('subclass_prefix') . $class;
-
-            if (class_exists($name, FALSE) === FALSE) {
-                require_once(APPPATH . $directory . '/' . $name . '.php');
-            }
-        }
-
-        // Did we find the class?
-        if ($name === FALSE) {
-            // Note: We use exit() rather than show_error() in order to avoid a
-            // self-referencing loop with the Exceptions class
-            set_status_header(503);
-            echo 'Unable to locate the specified class: ' . $class . '.php';
-            exit(5); // EXIT_UNK_CLASS
-        }
-
-        // Keep track of what we just loaded
-        self::isLoaded($class);
-
-        $_classes[$class] = isset($param)
-            ? new $name($param)
-            : new $name();
-        return $_classes[$class];
-    }
-
-
-    /**
-     * Loads the main config.php file
-     *
-     * This function lets us grab the config file even if the Config class
-     * hasn't been instantiated yet
-     *
-     * @param    array
-     * @return    array
-     */
-    public static function &getConfig(array $replace = array())
-    {
-        static $config;
-        if (empty($config)) {
-            $file_path = APPPATH . 'config/config.php';
-            $found = FALSE;
-            if (file_exists($file_path)) {
-                $found = TRUE;
-                require($file_path);
-            }
-
-            // Is the config file in the environment folder?
-            if (file_exists($file_path = APPPATH . 'config/' . ENVIRONMENT . '/config.php')) {
-                require($file_path);
-            } elseif (!$found) {
-                set_status_header(503);
-                echo 'The configuration file does not exist.';
-                exit(3); // EXIT_CONFIG
-            }
-
-            // Does the $config array exist in the file?
-            if (!isset($config) OR !is_array($config)) {
-                set_status_header(503);
-                echo 'Your config file does not appear to be formatted correctly.';
-                exit(3); // EXIT_CONFIG
-            }
-        }
-
-        // Are any values being dynamically added or replaced?
-        foreach ($replace as $key => $val) {
-            $config[$key] = $val;
-        }
-
-        return $config;
-    }
-
-
-    /**
-     * Returns the specified config item
-     *
-     * @param    string
-     * @return    mixed
-     */
-    public static function configItem($item)
-    {
-        static $_config;
-
-        if (empty($_config)) {
-            // references cannot be directly assigned to static variables, so we use an array
-            $_config[0] =& self::getConfig();
-        }
-
-        return isset($_config[0][$item]) ? $_config[0][$item] : NULL;
-    }
-
-    /**
-     * Returns the MIME types array from config/mimes.php
-     *
-     * @return    array
-     */
-    public static function &getMimes()
-    {
-        static $_mimes;
-
-        if (empty($_mimes)) {
-            if (file_exists(APPPATH . 'config/' . ENVIRONMENT . '/mimes.php')) {
-                $_mimes = include(APPPATH . 'config/' . ENVIRONMENT . '/mimes.php');
-            } elseif (file_exists(APPPATH . 'config/mimes.php')) {
-                $_mimes = include(APPPATH . 'config/mimes.php');
-            } else {
-                $_mimes = array();
-            }
-        }
-
-        return $_mimes;
-    }
-
-
-    /**
-     * Is HTTPS?
-     *
-     * Determines if the application is accessed via an encrypted
-     * (HTTPS) connection.
-     *
-     * @return    bool
-     */
-    public static function isHttps()
-    {
-        if (!empty($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) !== 'off') {
-            return TRUE;
-        } elseif (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower($_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') {
-            return TRUE;
-        } elseif (!empty($_SERVER['HTTP_FRONT_END_HTTPS']) && strtolower($_SERVER['HTTP_FRONT_END_HTTPS']) !== 'off') {
-            return TRUE;
-        }
-        return FALSE;
-    }
-
-    /**
-     * Is CLI?
-     *
-     * Test to see if a request was made from the command line.
-     *
-     * @return    bool
-     */
-    public static function isCli()
-    {
-        return (PHP_SAPI === 'cli' OR defined('STDIN'));
-    }
-
-
-    /**
-     * Set HTTP Status Header
-     *
-     * @param    int|string $code the status code
-     * @param    string
-     * @return    void
-     */
-    public static function setStatusHeader($code = 200, $text = '')
-    {
-        if (empty($text)) {
-            is_int($code) OR $code = (int)$code;
-            $stati = array(
-                100 => 'Continue',
-                101 => 'Switching Protocols',
-
-                200 => 'OK',
-                201 => 'Created',
-                202 => 'Accepted',
-                203 => 'Non-Authoritative Information',
-                204 => 'No Content',
-                205 => 'Reset Content',
-                206 => 'Partial Content',
-
-                300 => 'Multiple Choices',
-                301 => 'Moved Permanently',
-                302 => 'Found',
-                303 => 'See Other',
-                304 => 'Not Modified',
-                305 => 'Use Proxy',
-                307 => 'Temporary Redirect',
-
-                400 => 'Bad Request',
-                401 => 'Unauthorized',
-                402 => 'Payment Required',
-                403 => 'Forbidden',
-                404 => 'Not Found',
-                405 => 'Method Not Allowed',
-                406 => 'Not Acceptable',
-                407 => 'Proxy Authentication Required',
-                408 => 'Request Timeout',
-                409 => 'Conflict',
-                410 => 'Gone',
-                411 => 'Length Required',
-                412 => 'Precondition Failed',
-                413 => 'Request Entity Too Large',
-                414 => 'Request-URI Too Long',
-                415 => 'Unsupported Media Type',
-                416 => 'Requested Range Not Satisfiable',
-                417 => 'Expectation Failed',
-                422 => 'Unprocessable Entity',
-                426 => 'Upgrade Required',
-                428 => 'Precondition Required',
-                429 => 'Too Many Requests',
-                431 => 'Request Header Fields Too Large',
-
-                500 => 'Internal Server Error',
-                501 => 'Not Implemented',
-                502 => 'Bad Gateway',
-                503 => 'Service Unavailable',
-                504 => 'Gateway Timeout',
-                505 => 'HTTP Version Not Supported',
-                511 => 'Network Authentication Required',
-            );
-
-            if (isset($stati[$code])) {
-                $text = $stati[$code];
-            } else {
-                show_error('No status text available. Please check your status code number or supply your own message text.', 500);
-            }
-        }
-
-        if (strpos(PHP_SAPI, 'cgi') === 0) {
-            header('Status: ' . $code . ' ' . $text, TRUE);
-        } else {
-            $server_protocol = isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.1';
-            header($server_protocol . ' ' . $code . ' ' . $text, TRUE, $code);
-        }
-    }
-
-    /**
-     * Remove Invisible Characters
-     *
-     * This prevents sandwiching null characters
-     * between ascii characters, like Java\0script.
-     *
-     * @param    string
-     * @param    bool
-     * @return    string
-     */
-    public static function removeInvisibleCharacters($str, $url_encoded = TRUE)
-    {
-        $non_displayables = array();
-
-        // every control character except newline (dec 10),
-        // carriage return (dec 13) and horizontal tab (dec 09)
-        if ($url_encoded) {
-            $non_displayables[] = '/%0[0-8bcef]/i';    // url encoded 00-08, 11, 12, 14, 15
-            $non_displayables[] = '/%1[0-9a-f]/i';    // url encoded 16-31
-        }
-
-        $non_displayables[] = '/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]+/S';    // 00-08, 11, 12, 14-31, 127
-
-        do {
-            $str = preg_replace($non_displayables, '', $str, -1, $count);
-        } while ($count);
-
-        return $str;
-    }
-
-
-    /**
-     * Returns HTML escaped variable.
-     *
-     * @param    mixed $var The input string or array of strings to be escaped.
-     * @param    bool $double_encode $double_encode set to FALSE prevents escaping twice.
-     * @return    mixed            The escaped string or array of strings as a result.
-     */
-    public static function htmlEscape($var, $double_encode = TRUE)
-    {
-        if (empty($var)) {
-            return $var;
-        }
-
-        if (is_array($var)) {
-            foreach (array_keys($var) as $key) {
-                $var[$key] = self::htmlEscape($var[$key], $double_encode);
-            }
-
-            return $var;
-        }
-
-        return htmlspecialchars($var, ENT_QUOTES, self::configItem('charset'), $double_encode);
-    }
-
-    /**
-     * Stringify attributes for use in HTML tags.
-     *
-     * Helper function used to convert a string, array, or object
-     * of attributes to a string.
-     *
-     * @param    mixed    string, array, object
-     * @param    bool
-     * @return    string
-     */
-    public static function stringifyAttributes($attributes, $js = FALSE)
-    {
-        $atts = NULL;
-
-        if (empty($attributes)) {
-            return $atts;
-        }
-
-        if (is_string($attributes)) {
-            return ' ' . $attributes;
-        }
-
-        $attributes = (array)$attributes;
-
-        foreach ($attributes as $key => $val) {
-            $atts .= ($js) ? $key . '=' . $val . ',' : ' ' . $key . '="' . $val . '"';
-        }
-
-        return rtrim($atts, ',');
-    }
-
-
-    /**
-     * Function usable
-     *
-     * Executes a function_exists() check, and if the Suhosin PHP
-     * extension is loaded - checks whether the function that is
-     * checked might be disabled in there as well.
-     *
-     * This is useful as function_exists() will return FALSE for
-     * functions disabled via the *disable_functions* php.ini
-     * setting, but not for *suhosin.executor.func.blacklist* and
-     * *suhosin.executor.disable_eval*. These settings will just
-     * terminate script execution if a disabled function is executed.
-     *
-     * The above described behavior turned out to be a bug in Suhosin,
-     * but even though a fix was commited for 0.9.34 on 2012-02-12,
-     * that version is yet to be released. This function will therefore
-     * be just temporary, but would probably be kept for a few years.
-     *
-     * @link    http://www.hardened-php.net/suhosin/
-     * @param    string $function_name Function to check for
-     * @return    bool    TRUE if the function exists and is safe to call,
-     *            FALSE otherwise.
-     */
-    public static function functionUsable($function_name)
-    {
-        static $_suhosin_func_blacklist;
-
-        if (function_exists($function_name)) {
-            if (!isset($_suhosin_func_blacklist)) {
-                $_suhosin_func_blacklist = extension_loaded('suhosin')
-                    ? explode(',', trim(ini_get('suhosin.executor.func.blacklist')))
-                    : array();
-            }
-
-            return !in_array($function_name, $_suhosin_func_blacklist, TRUE);
-        }
-
-        return FALSE;
-    }
 }

@@ -1,7 +1,4 @@
 <?php
-/**
- *
- */
 use Sharin\ClassLoader;
 use Sharin\Utils;
 use Sharin\Behaviour;
