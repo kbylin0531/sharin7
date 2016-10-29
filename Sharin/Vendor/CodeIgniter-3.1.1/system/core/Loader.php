@@ -131,7 +131,6 @@ class CI_Loader {
 	 *
 	 * Sets component load paths, gets the initial output buffering level.
 	 *
-	 * @return	void
 	 */
 	public function __construct()
 	{

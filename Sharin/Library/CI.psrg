@@ -1,118 +1,121 @@
 <?php
-namespace Sharin\Library;
-define('SR_CI_PATH', realpath(__DIR__ . '/../Vendor/CodeIgniter-3.1.1/') . DIRECTORY_SEPARATOR);
-//---------------------------------------- 入口文件 ------------------------------------------------------------//
-/**
- *---------------------------------------------------------------
- * APPLICATION ENVIRONMENT
- *---------------------------------------------------------------
- * You can load different configurations depending on your
- * current environment. Setting the environment also influences
- * things like logging and error reporting.
- * This can be set to anything, but default usage is:
- *     development
- *     testing
- *     production
- * NOTE: If you change these, also change the error_reporting() code below
- */
-define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development');
-/**
- *---------------------------------------------------------------
- * ERROR REPORTING
- *---------------------------------------------------------------
- * Different environments will require different levels of error reporting.
- * By default development will show errors but testing and live will hide them.
- */
-switch (ENVIRONMENT) {
-    case 'development':
-        error_reporting(-1);
-        ini_set('display_errors', 1);
-        break;
-    case 'testing':
-    case 'production':
-        ini_set('display_errors', 0);
-        if (version_compare(PHP_VERSION, '5.3', '>=')) {
-            error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT & ~E_USER_NOTICE & ~E_USER_DEPRECATED);
-        } else {
-            error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_USER_NOTICE);
-        }
-        break;
-    default:
+namespace {
+
+    define('SR_CI_PATH', realpath(__DIR__ . '/../Vendor/CodeIgniter-3.1.1/') . DIRECTORY_SEPARATOR);
+//-----------------------------------------------------------------------------------------------------------------------------
+//       index.php
+//-----------------------------------------------------------------------------------------------------------------------------
+    /**
+     *---------------------------------------------------------------
+     * APPLICATION ENVIRONMENT
+     *---------------------------------------------------------------
+     * You can load different configurations depending on your
+     * current environment. Setting the environment also influences
+     * things like logging and error reporting.
+     * This can be set to anything, but default usage is:
+     *     development
+     *     testing
+     *     production
+     * NOTE: If you change these, also change the error_reporting() code below
+     */
+    define('ENVIRONMENT', isset($_SERVER['CI_ENV']) ? $_SERVER['CI_ENV'] : 'development');
+    /**
+     *---------------------------------------------------------------
+     * ERROR REPORTING
+     *---------------------------------------------------------------
+     * Different environments will require different levels of error reporting.
+     * By default development will show errors but testing and live will hide them.
+     */
+    switch (ENVIRONMENT) {
+        case 'development':
+            error_reporting(-1);
+            ini_set('display_errors', 1);
+            break;
+        case 'testing':
+        case 'production':
+            ini_set('display_errors', 0);
+            if (version_compare(PHP_VERSION, '5.3', '>=')) {
+                error_reporting(E_ALL & ~E_NOTICE & ~E_DEPRECATED & ~E_STRICT & ~E_USER_NOTICE & ~E_USER_DEPRECATED);
+            } else {
+                error_reporting(E_ALL & ~E_NOTICE & ~E_STRICT & ~E_USER_NOTICE);
+            }
+            break;
+        default:
+            header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
+            echo 'The application environment is not set correctly.';
+            exit(1); // EXIT_ERROR
+    }
+
+
+    /**
+     *---------------------------------------------------------------
+     * SYSTEM DIRECTORY NAME
+     *---------------------------------------------------------------
+     * This variable must contain the name of your "system" directory.
+     * Set the path if it is not in the same directory as this file.
+     */
+    $system_path = SR_CI_PATH . 'system/';
+    if (($_temp = realpath($system_path)) === FALSE) {
         header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
-        echo 'The application environment is not set correctly.';
-        exit(1); // EXIT_ERROR
-}
-
-
-/**
- *---------------------------------------------------------------
- * SYSTEM DIRECTORY NAME
- *---------------------------------------------------------------
- * This variable must contain the name of your "system" directory.
- * Set the path if it is not in the same directory as this file.
- */
-$system_path = SR_CI_PATH . 'system';
-if (($_temp = realpath($system_path)) === FALSE) {
-    header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
-    echo 'Your system folder path does not appear to be set correctly. Please open the following file and correct this: ' . pathinfo(__FILE__, PATHINFO_BASENAME);
-    exit(3); // EXIT_CONFIG
-}
+        echo 'Your system folder path does not appear to be set correctly. Please open the following file and correct this: ' . pathinfo(__FILE__, PATHINFO_BASENAME);
+        exit(3); // EXIT_CONFIG
+    }
 // Path to the system directory
-define('BASEPATH', $system_path);
-/**
- * -------------------------------------------------------------------
- *  Now that we know the path, set the main path constants
- * -------------------------------------------------------------------
- */
+    define('BASEPATH', $system_path);
+    /**
+     * -------------------------------------------------------------------
+     *  Now that we know the path, set the main path constants
+     * -------------------------------------------------------------------
+     */
 // The name of THIS file
-define('SELF', pathinfo($_SERVER['SCRIPT_FILENAME'], PATHINFO_BASENAME));
+    define('SELF', pathinfo($_SERVER['SCRIPT_FILENAME'], PATHINFO_BASENAME));
 // Path to the front controller (this file) directory
-define('FCPATH', dirname($_SERVER['SCRIPT_FILENAME']) . DIRECTORY_SEPARATOR);
+    define('FCPATH', dirname($_SERVER['SCRIPT_FILENAME']) . DIRECTORY_SEPARATOR);
 // Name of the "system" directory
-define('SYSDIR', basename(BASEPATH));
+    define('SYSDIR', basename(BASEPATH));
 
-/**
- *---------------------------------------------------------------
- * APPLICATION DIRECTORY NAME
- *---------------------------------------------------------------
- * If you want this front controller to use a different "application"
- * directory than the default one you can set its name here. The directory
- * can also be renamed or relocated anywhere on your server. If you do,
- * use an absolute (full) server path.
- * For more info please see the user guide:
- *
- * https://codeigniter.com/user_guide/general/managing_apps.html
- *
- * NO TRAILING SLASH!
- */
-$application_folder = SR_PATH_BASE . 'Application';
+    /**
+     *---------------------------------------------------------------
+     * APPLICATION DIRECTORY NAME
+     *---------------------------------------------------------------
+     * If you want this front controller to use a different "application"
+     * directory than the default one you can set its name here. The directory
+     * can also be renamed or relocated anywhere on your server. If you do,
+     * use an absolute (full) server path.
+     * For more info please see the user guide:
+     *
+     * https://codeigniter.com/user_guide/general/managing_apps.html
+     *
+     * NO TRAILING SLASH!
+     */
+    $application_folder = SR_PATH_BASE . 'Application';
 // The path to the "application" directory
-if (!is_dir($application_folder)) {
-    header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
-    echo 'Your application folder path does not appear to be set correctly. Please open the following file and correct this: ' . $application_folder;
-    exit(3); // EXIT_CONFIG
-}
-define('APPPATH', $application_folder . DIRECTORY_SEPARATOR);
+    if (!is_dir($application_folder)) {
+        header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
+        echo 'Your application folder path does not appear to be set correctly. Please open the following file and correct this: ' . $application_folder;
+        exit(3); // EXIT_CONFIG
+    }
+    define('APPPATH', $application_folder . DIRECTORY_SEPARATOR);
 
-/**
- *---------------------------------------------------------------
- * VIEW DIRECTORY NAME
- *---------------------------------------------------------------
- * If you want to move the view directory out of the application
- * directory, set the path to it here. The directory can be renamed
- * and relocated anywhere on your server. If blank, it will default
- * to the standard location inside your application directory.
- * If you do move this, use an absolute (full) server path.
- * NO TRAILING SLASH!
- */
-$view_folder = APPPATH . 'View';
+    /**
+     *---------------------------------------------------------------
+     * VIEW DIRECTORY NAME
+     *---------------------------------------------------------------
+     * If you want to move the view directory out of the application
+     * directory, set the path to it here. The directory can be renamed
+     * and relocated anywhere on your server. If blank, it will default
+     * to the standard location inside your application directory.
+     * If you do move this, use an absolute (full) server path.
+     * NO TRAILING SLASH!
+     */
+    $view_folder = APPPATH . 'View';
 // The path to the "views" directory
-if (!is_dir($view_folder) and !mkdir($view_folder, 0600, true)) {
-    header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
-    echo 'Your view folder path does not appear to be set correctly. Please open the following file and correct this: ' . $view_folder;
-    exit(3); // EXIT_CONFIG
-}
-define('VIEWPATH', $view_folder . DIRECTORY_SEPARATOR);
+    if (!is_dir($view_folder) and !mkdir($view_folder, 0600, true)) {
+        header('HTTP/1.1 503 Service Unavailable.', TRUE, 503);
+        echo 'Your view folder path does not appear to be set correctly. Please open the following file and correct this: ' . $view_folder;
+        exit(3); // EXIT_CONFIG
+    }
+    define('VIEWPATH', $view_folder . DIRECTORY_SEPARATOR);
 
 //set_error_handler([CI::class,'handleError']);
 //set_exception_handler([CI::class,'handleException']);
@@ -124,28 +127,258 @@ define('VIEWPATH', $view_folder . DIRECTORY_SEPARATOR);
 //        CI::handleError($last_error['type'], $last_error['message'], $last_error['file'], $last_error['line']);
 //    }
 //});
-/**
- * Class CI
- * CI类中间层，可以通过它加载CI中的类和方法
- * @package Sharin\Library
- */
-class CI
-{
+
     /**
-     * @var CI
+     * CodeIgniter Version
+     *
+     * @var    string
+     *
      */
-    private static $instance = null;
+    const CI_VERSION = '3.1.1';
 
-    private function __construct(){
 
-    }
-
-    public static function app()
+}
+namespace Sharin\Library {
+    /**
+     * Class CI
+     * CI类中间层，可以通过它加载CI中的类和方法
+     *
+     * @property \CI_Security $security 安全类
+     *
+     * @package Sharin\Library
+     */
+    class CI
     {
-        if (!self::$instance) {
-            self::$instance = new self();
+        /**
+         * @var self
+         */
+        private static $instance = null;
+        /**
+         * @var \CI_Loader
+         */
+        protected $load = null;
+
+        public function __get($name){
+            \Sharin\dump($name);
         }
-        return self::$instance;
+
+        private function __construct()
+        {
+            // Assign all the class objects that were instantiated by the
+            // bootstrap file (CodeIgniter.php) to local class variables
+            // so that CI can run as one big super object.
+            foreach (is_loaded() as $var => $class) {
+                $this->$var =& load_class($class);
+            }
+
+            $this->load =& load_class('Loader', 'core');
+            $this->load->initialize();
+        }
+
+        /**
+         * @return self
+         */
+        public static function app()
+        {
+            if (!self::$instance) {
+                self::$instance = new self();
+            }
+            return self::$instance;
+        }
+
+        /**
+         * Loads the main config.php file
+         *
+         * This function lets us grab the config file even if the Config class
+         * hasn't been instantiated yet
+         *
+         * @param    array
+         * @return    array
+         */
+        public static function &getConfig(array $replace = array())
+        {
+            static $config;
+
+            if (empty($config)) {
+                $file_path = APPPATH . 'Config/config.php';
+                $found = FALSE;
+                if (file_exists($file_path)) {
+                    $found = TRUE;
+                    require($file_path);
+                }
+
+                // Is the config file in the environment folder?
+                if (file_exists($file_path = APPPATH . 'Config/' . ENVIRONMENT . '/config.php')) {
+                    require($file_path);
+                } elseif (!$found) {
+                    set_status_header(503);
+                    echo 'The configuration file does not exist:' . $file_path;
+                    exit(3); // EXIT_CONFIG
+                }
+
+                // Does the $config array exist in the file?
+                if (!isset($config) OR !is_array($config)) {
+                    set_status_header(503);
+                    echo 'Your config file does not appear to be formatted correctly.';
+                    exit(3); // EXIT_CONFIG
+                }
+            }
+
+            // Are any values being dynamically added or replaced?
+            foreach ($replace as $key => $val) {
+                $config[$key] = $val;
+            }
+
+            return $config;
+        }
+
     }
 
+}
+namespace {
+
+    use Sharin\Library\CI;
+
+    /**
+     * Loads the main config.php file
+     *
+     * This function lets us grab the config file even if the Config class
+     * hasn't been instantiated yet
+     *
+     * @param    array $replace
+     * @return    array
+     */
+    function &get_config(Array $replace = array())
+    {
+        return CI::getConfig($replace);
+    }
+
+    /**
+     * Returns the MIME types array from config/mimes.php
+     *
+     * @return    array
+     */
+    function &get_mimes()
+    {
+        static $_mimes;
+        if (empty($_mimes)) {
+            if (file_exists(APPPATH . 'Config/' . ENVIRONMENT . '/mimes.php')) {
+                $_mimes = include(APPPATH . 'Config/' . ENVIRONMENT . '/mimes.php');
+            } elseif (file_exists(APPPATH . 'Config/mimes.php')) {
+                $_mimes = include(APPPATH . 'Config/mimes.php');
+            } else {
+                $_mimes = array();
+            }
+        }
+        return $_mimes;
+    }
+
+
+//-----------------------------------------------------------------------------------------------------------------------------
+//       system/core/Codeigniter.php
+//-----------------------------------------------------------------------------------------------------------------------------
+    /**
+     * ------------------------------------------------------
+     *  Load the framework constants
+     * ------------------------------------------------------
+     */
+    if (file_exists(APPPATH . 'config/' . ENVIRONMENT . '/constants.php')) {
+        require_once(APPPATH . 'config/' . ENVIRONMENT . '/constants.php');
+    }
+    $constant_file = APPPATH . 'config/constants.php';
+    is_file($constant_file) and require_once($constant_file);
+    /**
+     * ------------------------------------------------------
+     *  Load the global functions
+     * ------------------------------------------------------
+     */
+    require_once(BASEPATH . 'core/Common.php');
+    /**
+     * ------------------------------------------------------
+     *  Set the subclass_prefix
+     * ------------------------------------------------------
+     * Normally the "subclass_prefix" is set in the config file.
+     * The subclass prefix allows CI to know if a core class is
+     * being extended via a library in the local application
+     * "libraries" folder. Since CI allows config items to be
+     * overridden via data set in the main index.php file,
+     * before proceeding we need to know if a subclass_prefix
+     * override exists. If so, we will set this value now,
+     * before any classes are loaded
+     * Note: Since the config file data is cached it doesn't
+     * hurt to load it here.
+     */
+    if (!empty($assign_to_config['subclass_prefix'])) {
+        get_config(array('subclass_prefix' => $assign_to_config['subclass_prefix']));
+    }
+    /**
+     * ------------------------------------------------------
+     *  Should we use a Composer autoloader?
+     * ------------------------------------------------------
+     */
+    if ($composer_autoload = config_item('composer_autoload')) {
+        if ($composer_autoload === TRUE) {
+            file_exists(APPPATH . 'vendor/autoload.php')
+                ? require_once(APPPATH . 'vendor/autoload.php')
+                : log_message('error', '$config[\'composer_autoload\'] is set to TRUE but ' . APPPATH . 'vendor/autoload.php was not found.');
+        } elseif (file_exists($composer_autoload)) {
+            require_once($composer_autoload);
+        } else {
+            log_message('error', 'Could not find the specified $config[\'composer_autoload\'] path: ' . $composer_autoload);
+        }
+    }
+
+    /**
+     * ------------------------------------------------------
+     * Important charset-related stuff
+     * ------------------------------------------------------
+     *
+     * Configure mbstring and/or iconv if they are enabled
+     * and set MB_ENABLED and ICONV_ENABLED constants, so
+     * that we don't repeatedly do extension_loaded() or
+     * function_exists() calls.
+     *
+     * Note: UTF-8 class depends on this. It used to be done
+     * in it's constructor, but it's _not_ class-specific.
+     *
+     */
+    $charset = strtoupper(config_item('charset'));
+    ini_set('default_charset', $charset);
+
+    if (extension_loaded('mbstring')) {
+        define('MB_ENABLED', TRUE);
+        // mbstring.internal_encoding is deprecated starting with PHP 5.6
+        // and it's usage triggers E_DEPRECATED messages.
+//    ini_set('mbstring.internal_encoding', $charset);
+        // This is required for mb_convert_encoding() to strip invalid characters.
+        // That's utilized by CI_Utf8, but it's also done for consistency with iconv.
+        mb_substitute_character('none');
+    } else {
+        define('MB_ENABLED', FALSE);
+    }
+
+// There's an ICONV_IMPL constant, but the PHP manual says that using
+// iconv's predefined constants is "strongly discouraged".
+    if (extension_loaded('iconv')) {
+        define('ICONV_ENABLED', TRUE);
+        // iconv.internal_encoding is deprecated starting with PHP 5.6
+        // and it's usage triggers E_DEPRECATED messages.
+//    @ini_set('iconv.internal_encoding', $charset);
+    } else {
+        define('ICONV_ENABLED', FALSE);
+    }
+
+    if (is_php('5.6')) {
+        ini_set('php.internal_encoding', $charset);
+    }
+    /**
+     * ------------------------------------------------------
+     *  Load compatibility features
+     * ------------------------------------------------------
+     */
+
+    require_once(BASEPATH . 'core/compat/mbstring.php');
+    require_once(BASEPATH . 'core/compat/hash.php');
+    require_once(BASEPATH . 'core/compat/password.php');
+    require_once(BASEPATH . 'core/compat/standard.php');
 }
