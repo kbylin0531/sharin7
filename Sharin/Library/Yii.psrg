@@ -1,0 +1,15 @@
+<?php
+/**
+ * Created by PhpStorm.
+ * User: asus
+ * Date: 10/30/16
+ * Time: 11:53 AM
+ */
+
+namespace Sharin\Library;
+
+
+class Yii
+{
+
+}

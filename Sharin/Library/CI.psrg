@@ -1,7 +1,7 @@
 <?php
 namespace {
 
-    define('SR_CI_PATH', realpath(__DIR__ . '/../Vendor/CodeIgniter-3.1.1/') . DIRECTORY_SEPARATOR);
+    define('SR_CI_PATH', realpath(__DIR__ . '/../Vendor/CodeIgniter/') . DIRECTORY_SEPARATOR);
 //-----------------------------------------------------------------------------------------------------------------------------
 //       index.php
 //-----------------------------------------------------------------------------------------------------------------------------
@@ -144,6 +144,7 @@ namespace Sharin\Library {
      * CI类中间层，可以通过它加载CI中的类和方法
      *
      * @property \CI_Security $security 安全类
+     * @property \CI_URI $uri
      *
      * @package Sharin\Library
      */
@@ -158,21 +159,13 @@ namespace Sharin\Library {
          */
         protected $load = null;
 
-        public function __get($name){
-            \Sharin\dump($name);
-        }
-
-        private function __construct()
+        public function __get($name)
         {
-            // Assign all the class objects that were instantiated by the
-            // bootstrap file (CodeIgniter.php) to local class variables
-            // so that CI can run as one big super object.
-            foreach (is_loaded() as $var => $class) {
-                $this->$var =& load_class($class);
-            }
-
-            $this->load =& load_class('Loader', 'core');
-            $this->load->initialize();
+            static $_map = [
+                'security'  => 'Security',
+                'uri'  => 'URI',
+            ];
+            return self::loadClass(isset($_map[$name]) ? $_map[$name] : ucfirst($name), 'core');
         }
 
         /**
@@ -181,9 +174,67 @@ namespace Sharin\Library {
         public static function app()
         {
             if (!self::$instance) {
-                self::$instance = new self();
+                self::$instance = new CI();
             }
             return self::$instance;
+        }
+
+        /**
+         * Class registry
+         *
+         * This function acts as a singleton. If the requested class does not
+         * exist it is instantiated and set to a static variable. If it has
+         * previously been instantiated the variable is returned.
+         *
+         * @param    string $class the class name being requested
+         * @param    string $directory the directory where the class should be found
+         * @param    string $param an optional argument to pass to the class constructor
+         * @return    object
+         */
+        public static function &loadClass($class, $directory = 'libraries', $param = NULL)
+        {
+            static $_instances = array();
+            // Does the class exist? If so, we're done...
+            if (!isset($_instances[$class])) {
+                $name = FALSE;
+                // Look for the class first in the local application/libraries folder
+                // then in the native system/libraries folder
+                foreach (array(APPPATH, BASEPATH) as $path) {
+                    if (file_exists($path . $directory . '/' . $class . '.php')) {
+                        $name = 'CI_' . $class;
+                        if (class_exists($name, FALSE) === FALSE) {
+                            require_once($path . $directory . '/' . $class . '.php');
+                        }
+                        break;
+                    }
+                }
+
+                // Is the request a class extension? If so we load it too
+                if (file_exists(APPPATH . $directory . '/' . config_item('subclass_prefix') . $class . '.php')) {
+                    $name = config_item('subclass_prefix') . $class;
+
+                    if (class_exists($name, FALSE) === FALSE) {
+                        require_once(APPPATH . $directory . '/' . $name . '.php');
+                    }
+                }
+
+                // Did we find the class?
+                if ($name === FALSE) {
+                    // Note: We use exit() rather than show_error() in order to avoid a
+                    // self-referencing loop with the Exceptions class
+                    set_status_header(503);
+                    echo 'Unable to locate the specified class: ' . $class . '.php';
+                    exit(5); // EXIT_UNK_CLASS
+                }
+
+                // Keep track of what we just loaded
+                is_loaded($class);
+
+                $_instances[$class] = isset($param)
+                    ? new $name($param)
+                    : new $name();
+            }
+            return $_instances[$class];
         }
 
         /**
@@ -200,7 +251,7 @@ namespace Sharin\Library {
             static $config;
 
             if (empty($config)) {
-                $file_path = APPPATH . 'Config/config.php';
+                $file_path = SR_PATH_BASE . 'Config/ci_config/config.php';
                 $found = FALSE;
                 if (file_exists($file_path)) {
                     $found = TRUE;
@@ -238,6 +289,11 @@ namespace Sharin\Library {
 namespace {
 
     use Sharin\Library\CI;
+
+    function &load_class($class, $directory = 'libraries', $param = NULL)
+    {
+        return CI::loadClass($class, $directory, $param);
+    }
 
     /**
      * Loads the main config.php file
@@ -381,4 +437,5 @@ namespace {
     require_once(BASEPATH . 'core/compat/hash.php');
     require_once(BASEPATH . 'core/compat/password.php');
     require_once(BASEPATH . 'core/compat/standard.php');
+    CI::loadClass('Utf8','core');
 }
